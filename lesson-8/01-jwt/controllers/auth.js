@@ -2,14 +2,17 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 import User from "../models/user.js";
+import {json} from "express";
+
+const {SECRET_KEY} = process.env;
 
 const register = async (req, res, next) => {
     const {name, email, password} = req.body;
 
-    const normalizeEmail = email.toLowerCase();
+    const normalizedEmail = email.toLowerCase();
 
     try {
-        const user = await User.findOne({email: normalizeEmail});
+        const user = await User.findOne({email: normalizedEmail});
 
         if (user) {
             return res.status(409).send({message: "User already registered"});
@@ -17,7 +20,11 @@ const register = async (req, res, next) => {
 
         const passwordHash = await bcrypt.hash(password, 10);
 
-        await User.create({name, email: normalizeEmail, password: passwordHash});
+        await User.create({
+            name,
+            email: normalizedEmail,
+            password: passwordHash,
+        });
 
         res.status(201).send({message: "Registration successful"});
     } catch (error) {
@@ -28,30 +35,33 @@ const register = async (req, res, next) => {
 const login = async (req, res, next) => {
     const {email, password} = req.body;
 
+    const normalizedEmail = email ? email.toLowerCase() : null;
+
     try {
-        const normalizedEmail = email.toLowerCase();
         const user = await User.findOne({email: normalizedEmail});
 
         if (!user) {
-            console.log("email");
-            return res.status(401).send({message: "Email or password is incorrect"});
+            return res
+                .status(401)
+                .send({message: "Email or password is incorrect"});
         }
 
-        const isMatch = await bcrypt.compare(password, user.password);
+        const passwordCompare = await bcrypt.compare(password, user.password);
 
-        if (isMatch === false) {
-            console.log("password");
-            return res.status(401).send({message: "Email or password is incorrect"});
+        if (!passwordCompare) {
+            return res
+                .status(401)
+                .send({message: "Email or password is incorrect"});
         }
 
-        const token = jwt.sign({
-                id: user._id,
-                name: user.name,
-            },
-            process.env.JWT_SECRET,
-            {expiresIn: 60 * 60});
+        const payload = {
+            name: user.name,
+            id: user.id,
+        };
 
-        await User.findByIdAndUpdate(user._id, {token});
+        const token = jwt.sign(payload, SECRET_KEY, {expiresIn: 60 * 60});
+
+        await User.findByIdAndUpdate(user.id, {token});
 
         res.send({token});
     } catch (error) {
@@ -67,7 +77,10 @@ const logout = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-
 };
 
-export default {register, login, logout};
+export default {
+    register,
+    login,
+    logout,
+};

@@ -1,9 +1,13 @@
 import Book from "../models/book.js";
+import User from "../models/user.js";
 import book from "../models/book.js";
 
 const getBooks = async (req, res, next) => {
+    const {id} = req.user;
+
     try {
-        const books = await book.find({ownerId: req.user.id});
+        const books = await book.find({ownerId: id});
+
         res.send(books);
     } catch (error) {
         next(error);
@@ -19,9 +23,8 @@ const getBook = async (req, res, next) => {
             return res.status(404).send("Book not found");
         }
 
-        if (book.ownerId.toString() !== req.user.id) {
-            // return res.status(403).send({message: "Access denied"});
-            return res.status(404).send({message: "Book not found"});
+        if (book.ownerId.toString() === req.user.id) {
+            return res.status(404).send("Book not found");
         }
 
         res.send(book);

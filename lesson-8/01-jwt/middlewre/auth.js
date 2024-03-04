@@ -1,20 +1,23 @@
 import jwt from "jsonwebtoken";
+
 import User from "../models/user.js";
 
-const auth = (req, res, next) => {
-    const authHeader = req.headers.authorization;
+const {SECRET_KEY} = process.env;
 
-    if (!authHeader) {
+const auth = async (req, res, next) => {
+    const authHeaders = req.headers.authorization;
+
+    if (!authHeaders) {
         return res.status(401).send({message: "Invalid token"});
     }
 
-    const [bearer, token] = authHeader.split(" ", 2);
+    const [bearer, token] = authHeaders.split(" ");
 
     if (bearer !== "Bearer") {
         return res.status(401).send({message: "Invalid token"});
     }
 
-    jwt.verify(token, process.env.JWT_SECRET, async (err, decode) => {
+    jwt.verify(token, SECRET_KEY, async (err, decode) => {
         if (err) {
             if (err.name === "TokenExpiredError") {
                 return res.status(401).send({message: "Token expired"});
@@ -25,7 +28,7 @@ const auth = (req, res, next) => {
 
         const user = await User.findById(decode.id);
 
-        if (user === null) {
+        if (!user) {
             return res.status(401).send({message: "Invalid token"});
         }
 
@@ -35,7 +38,6 @@ const auth = (req, res, next) => {
 
         req.user = {
             id: decode.id,
-            name: decode.name,
         };
 
         next();

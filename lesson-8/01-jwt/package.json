@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node -r dotenv/config index.js",
-    "start:dev": "nodemon -r dotenv/config index.js"
+    "dev": "nodemon -r dotenv/config index.js"
   },
   "keywords": [],
   "author": "",
