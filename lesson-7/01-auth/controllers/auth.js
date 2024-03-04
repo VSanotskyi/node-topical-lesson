@@ -5,10 +5,10 @@ import User from "../models/user.js";
 const register = async (req, res, next) => {
     const {name, email, password} = req.body;
 
-    const normalizeEmail = email.toLowerCase();
+    const normalizedEmail = email.toLowerCase();
 
     try {
-        const user = await User.findOne({email: normalizeEmail});
+        const user = await User.findOne({email: normalizedEmail});
 
         if (user) {
             return res.status(409).send({message: "User already registered"});
@@ -16,7 +16,11 @@ const register = async (req, res, next) => {
 
         const passwordHash = await bcrypt.hash(password, 10);
 
-        await User.create({name, email: normalizeEmail, password: passwordHash});
+        await User.create({
+            name,
+            email: normalizedEmail,
+            password: passwordHash,
+        });
 
         res.status(201).send({message: "Registration successful"});
     } catch (error) {
@@ -27,27 +31,32 @@ const register = async (req, res, next) => {
 const login = async (req, res, next) => {
     const {email, password} = req.body;
 
+    const normalizedEmail = email.toLowerCase();
+
     try {
-        const normalizedEmail = email.toLowerCase();
         const user = await User.findOne({email: normalizedEmail});
 
         if (!user) {
-            console.log("email");
-            return res.status(401).send({message: "Email or password is incorrect"});
+            return res
+                .status(401)
+                .send({message: "Email or password is incorrect"});
         }
 
-        const isMatch = await bcrypt.compare(password, user.password);
+        const passwordCompare = await bcrypt.compare(password, user.password);
 
-        if (isMatch === false) {
-            console.log("password");
-            return res.status(401).send({message: "Email or password is incorrect"});
+        if (!passwordCompare) {
+            return res
+                .status(401)
+                .send({message: "Email or password is incorrect"});
         }
 
-        res.end("Token");
-
+        res.send({token: "TOKEN"});
     } catch (error) {
         next(error);
     }
 };
 
-export default {register, login};
+export default {
+    register,
+    login,
+};
