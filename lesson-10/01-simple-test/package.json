@@ -1,0 +1,13 @@
+{
+  "name": "01-simple-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "sum.js",
+  "type": "module",
+  "scripts": {
+    "test": "node sum.test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
